@@ -9,7 +9,7 @@ class Vector {
 
   plus(vector) {
 
-    if (!Vector.prototype.isPrototypeOf(vector)) {
+    if (!(vector instanceof Vector)) {
       throw new TypeError('Можно прибавлять к вектору только вектор типа Vector.');
     }
 
@@ -25,26 +25,39 @@ class Vector {
 class Actor {
   constructor(pos = new Vector(0, 0), size = new Vector(1, 1), speed = new Vector(0,0)) {
 
-    if (!Vector.prototype.isPrototypeOf(pos) || !Vector.prototype.isPrototypeOf(size) || !Vector.prototype.isPrototypeOf(speed)) {
+    if (!(pos instanceof Vector) || !(size instanceof Vector) || !(speed instanceof Vector)) {
       throw new TypeError('Расположение, размер и скорость должны быть только типа Vector либо отсутствовать.');
     }
 
     this.pos = pos;
     this.size = size;
     this.speed = speed;
+  }
 
-    Object.defineProperty(this, 'left', {get: function() {return this.pos.x}});
-    Object.defineProperty(this, 'right', {get: function() {return this.pos.x + this.size.x}});
-    Object.defineProperty(this, 'top', {get: function() {return this.pos.y}});
-    Object.defineProperty(this, 'bottom', {get: function() {return this.pos.y + this.size.y}});
-    Object.defineProperty(this, 'type', {configurable: true, value: 'actor'});
+  get type () {
+    return 'actor';
+  }
+
+  get left () {
+    return this.pos.x;
+  }
+
+  get right () {
+    return this.pos.x + this.size.x;
+  }
+
+  get top () {
+    return this.pos.y;
+  }
+
+  get bottom () {
+    return this.pos.y + this.size.y;
   }
 
   act() {}
 
   isIntersect(actor) {
     if (!(actor instanceof Actor ||
-        Actor.isPrototypeOf(actor) ||
         (
           actor instanceof Actor.constructor &&
           actor.name === 'Actor'
@@ -97,7 +110,6 @@ class Level {
 
   actorAt(actor = undefined) {
     if (!(actor instanceof Actor ||
-        Actor.isPrototypeOf(actor) ||
         (
           actor instanceof Actor.constructor &&
           actor.name === 'Actor'
@@ -117,7 +129,7 @@ class Level {
   }
 
   obstacleAt(movePlace = undefined, size = undefined) {
-    if (!Vector.prototype.isPrototypeOf(movePlace) || !Vector.prototype.isPrototypeOf(size)) {
+    if (!(movePlace instanceof Vector) || !(size instanceof Vector)) {
       throw new TypeError('Аргументы должны быть типа Vector.');
     }
 
@@ -134,15 +146,32 @@ class Level {
     }
 
     if (this.grid !== undefined) {
-      if (this.grid[Math.ceil(movePlace.y + size.y) - 1][Math.ceil(movePlace.x + size.x) - 1] !== undefined) {
-        return this.grid[Math.ceil(movePlace.y + size.y) - 1][Math.ceil(movePlace.x + size.x) - 1];
-      } else if (this.grid[Math.floor(movePlace.y + size.y) - 1][Math.floor(movePlace.x + size.x) - 1] !== undefined) {
-        return this.grid[Math.floor(movePlace.y + size.y) - 1][Math.floor(movePlace.x + size.x) - 1];
-      } else if (this.grid[Math.floor(movePlace.y + size.y) - 1][Math.ceil(movePlace.x + size.x) - 1] !== undefined) {
-        return this.grid[Math.floor(movePlace.y + size.y) - 1][Math.ceil(movePlace.x + size.x) - 1];
-      } else if (this.grid[Math.ceil(movePlace.y + size.y) - 1][Math.floor(movePlace.x + size.x) - 1] !== undefined) {
-          return this.grid[Math.ceil(movePlace.y + size.y) - 1][Math.floor(movePlace.x + size.x) - 1];
-      }
+      let countYMax = Math.ceil(size.y);
+      let countXMax = Math.ceil(size.x);
+
+      try {
+
+        if (this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x + size.x - 0.000001)] !== undefined) {
+          return this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x + size.x - 0.000001)];
+        }
+
+        for (let countY = 0; countY < countYMax; countY++) {
+
+          for (let countX = 0; countX < countXMax; countX++) {
+
+            if (this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x) + countX] !== undefined) {
+              return this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x) + countX];
+            } else if (this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x) + countX] !== undefined) {
+              return this.grid[Math.floor(movePlace.y + size.y - 0.000001) + countY][Math.floor(movePlace.x) + countX];
+            } else if (this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001) + countX] !== undefined) {
+              return this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001) + countX];
+            }
+
+          }
+
+        }
+
+      } catch (e) {}
     }
 
     return undefined;
@@ -150,7 +179,6 @@ class Level {
 
   removeActor(actor = undefined) {
     if (!(actor instanceof Actor ||
-        Actor.isPrototypeOf(actor) ||
         (
           actor instanceof Actor.constructor &&
           actor.name === 'Actor'
@@ -181,7 +209,6 @@ class Level {
   playerTouched(type, actor = undefined) {
 
     if (actor !== undefined && !(actor instanceof Actor ||
-        Actor.isPrototypeOf(actor) ||
         (
           actor instanceof Actor.constructor &&
           actor.name === 'Actor'
@@ -288,7 +315,7 @@ class LevelParser {
           if (constuct !== undefined &&
             (
               constuct instanceof Actor ||
-              Actor.isPrototypeOf(constuct) ||
+              Actor.isPrototypeOf(constuct) ||  //оставил, иначе тесты не проходят
               (
                 constuct instanceof Actor.constructor &&
                 constuct.name === 'Actor'
@@ -322,7 +349,10 @@ class Fireball extends Actor {
     this.pos = pos;
     this.speed = speed;
     this.size = new Vector(1, 1);
-    Object.defineProperty(this, 'type', {configurable: true, value: 'fireball'});
+  }
+
+  get type() {
+    return 'fireball';
   }
 
   getNextPosition(time = 1) {
@@ -387,7 +417,10 @@ class Coin extends Actor {
     this.springSpeed = 8;
     this.springDist = 0.07;
     this.spring = Math.random() * 2 * Math.PI;
-    Object.defineProperty(this, 'type', {configurable: true, value: 'coin'});
+  }
+
+  get type() {
+    return 'coin';
   }
 
   updateSpring(time = 1) {
@@ -414,33 +447,12 @@ class Player extends Actor {
     this.pos = pos.plus(new Vector(0, -0.5));
     this.size = new Vector(0.8, 1.5);
     this.speed = new Vector(0, 0);
-    Object.defineProperty(this, 'type', {configurable: true, value: 'player'});
+  }
+
+  get type() {
+    return 'player';
   }
 }
-
-const schemas = [
-  [
-    '           v  ',
-    '    o     o    |',
-    '          x     ',
-    '                 | ',
-    '     !xxx  =   ',
-    '@              ',
-    'xxx!     =     ',
-    '        |      '
-  ],
-  [
-    '      v  ',
-    '    v    ',
-    '  v      ',
-    '        o',
-    '        x',
-    '@    x   ',
-    'x        ',
-    '         '
-  ]
-];
-
 
 const actorDict = {
   '@': Player,
@@ -448,13 +460,15 @@ const actorDict = {
   'o': Coin,
   '=': HorizontalFireball,
   '|': VerticalFireball
-}
-const parser = new LevelParser(actorDict);
-runGame(schemas, parser, DOMDisplay)
-  .then(() => alert('Вы выиграли приз!'));
+};
 
-
-
+loadLevels()
+  .then((value) => {
+    const schemas = JSON.parse(value);
+    const parser = new LevelParser(actorDict);
+    runGame(schemas, parser, DOMDisplay)
+    .then(() => alert('Вы выиграли приз!'));
+});
 
 
 
