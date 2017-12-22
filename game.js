@@ -163,8 +163,8 @@ class Level {
               return this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x) + countX];
             } else if (this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x) + countX] !== undefined) {
               return this.grid[Math.floor(movePlace.y + size.y - 0.000001) + countY][Math.floor(movePlace.x) + countX];
-            } else if (this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001) + countX] !== undefined) {
-              return this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001) + countX];
+            } else if (this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001)] !== undefined) {
+              return this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001)];
             }
 
           }
