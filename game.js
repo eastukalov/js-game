@@ -57,12 +57,7 @@ class Actor {
   act() {}
 
   isIntersect(actor) {
-    if (!(actor instanceof Actor ||
-        (
-          actor instanceof Actor.constructor &&
-          actor.name === 'Actor'
-        )
-      )) {
+    if (!(actor instanceof Actor)) {
       throw new TypeError('Проверку можно осуществлять только с объектом типа Actor.');
     }
 
@@ -108,13 +103,8 @@ class Level {
     return this.status !== null && this.finishDelay < 0;
   }
 
-  actorAt(actor = undefined) {
-    if (!(actor instanceof Actor ||
-        (
-          actor instanceof Actor.constructor &&
-          actor.name === 'Actor'
-        )
-      )) {
+  actorAt(actor) {
+    if (!(actor instanceof Actor)) {
       throw new TypeError('Аргументом должен быть движущийся объект типа Actor.');
     }
 
@@ -128,7 +118,7 @@ class Level {
 
   }
 
-  obstacleAt(movePlace = undefined, size = undefined) {
+  obstacleAt(movePlace, size) {
     if (!(movePlace instanceof Vector) || !(size instanceof Vector)) {
       throw new TypeError('Аргументы должны быть типа Vector.');
     }
@@ -146,44 +136,36 @@ class Level {
     }
 
     if (this.grid !== undefined) {
-      let countYMax = Math.ceil(size.y);
-      let countXMax = Math.ceil(size.x);
+      let countYMin = Math.floor(movePlace.y);
+      let countYMax = (Math.floor(movePlace.y + size.y) === Math.ceil(movePlace.y + size.y)) ? Math.floor(movePlace.y + size.y) - 1: Math.floor(movePlace.y + size.y);
+      let countXMin = Math.floor(movePlace.x);
+      let countXMax = (Math.floor(movePlace.x + size.x) === Math.ceil(movePlace.x + size.x)) ? Math.floor(movePlace.x + size.x) - 1: Math.floor(movePlace.x + size.x);
+      let countX, countY;
 
-      try {
+      countY = countYMin;
 
-        if (this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x + size.x - 0.000001)] !== undefined) {
-          return this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x + size.x - 0.000001)];
-        }
+      do {
+        countX = countXMin;
 
-        for (let countY = 0; countY < countYMax; countY++) {
+        do {
 
-          for (let countX = 0; countX < countXMax; countX++) {
-
-            if (this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x) + countX] !== undefined) {
-              return this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x) + countX];
-            } else if (this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x) + countX] !== undefined) {
-              return this.grid[Math.floor(movePlace.y + size.y - 0.000001)][Math.floor(movePlace.x) + countX];
-            } else if (this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001)] !== undefined) {
-              return this.grid[Math.floor(movePlace.y) + countY][Math.floor(movePlace.x + size.x - 0.000001)];
-            }
-
+          if (this.grid[countY][countX] !== undefined) {
+            return this.grid[countY][countX];
           }
 
-        }
+          countX++;
+        } while (countX <= countXMax)
 
-      } catch (e) {}
+        countY++;
+      } while (countY <= countYMax)
+
     }
 
     return undefined;
   }
 
-  removeActor(actor = undefined) {
-    if (!(actor instanceof Actor ||
-        (
-          actor instanceof Actor.constructor &&
-          actor.name === 'Actor'
-        )
-      )) {
+  removeActor(actor) {
+    if (!(actor instanceof Actor)) {
       throw new TypeError('Аргумент должен быть типа Actor.');
     }
 
@@ -196,24 +178,17 @@ class Level {
 
   noMoreActors(type) {
     if (this.actors !== undefined && this.actors.length > 0) {
-      let result = this.actors.find(function(el) {
+      return !this.actors.some(function(el) {
         return el.type === type;
       });
-
-      return result === undefined;
     }
 
     return true;
   }
 
-  playerTouched(type, actor = undefined) {
+  playerTouched(type, actor) {
 
-    if (actor !== undefined && !(actor instanceof Actor ||
-        (
-          actor instanceof Actor.constructor &&
-          actor.name === 'Actor'
-        )
-      )) {
+    if (actor !== undefined && !(actor instanceof Actor)) {
       throw new TypeError('Аргумент должен быть типа Actor.');
     }
 
@@ -243,20 +218,16 @@ class LevelParser {
 
   actorFromSymbol(symbol) {
 
-    if (typeof symbol !== 'string' || this.dict === undefined) {
-      return undefined;
-    }
-
-    if (symbol in this.dict) {
+    if (this.dict !== undefined && symbol in this.dict) {
       return this.dict[symbol];
     }
 
     return undefined;
   }
 
-  createGrid(array = undefined) {
+  createGrid(array) {
 
-    if (array === undefined || !Array.isArray(array) || array.length === 0) {
+    if (!Array.isArray(array) || array.length === 0) {
       return [];
     }
 
@@ -280,7 +251,7 @@ class LevelParser {
     return arrayTarget;
   }
 
-  obstacleFromSymbol(symbol = undefined) {
+  obstacleFromSymbol(symbol) {
 
     if (typeof symbol !== 'string') {
       return undefined;
@@ -297,12 +268,11 @@ class LevelParser {
 
   createActors(array) {
 
-    if (array === undefined || !Array.isArray(array) || array.length === 0) {
+    if (!Array.isArray(array) || array.length === 0) {
       return [];
     }
 
     let arrayTarget = [];
-    let obj;
     let constuct;
 
     for (let i = 0; i < array.length; i++) {
@@ -314,18 +284,14 @@ class LevelParser {
 
           if (constuct !== undefined &&
             (
-              constuct instanceof Actor ||
-              Actor.isPrototypeOf(constuct) ||  //оставил, иначе тесты не проходят
+              Actor.isPrototypeOf(constuct) ||
               (
                 constuct instanceof Actor.constructor &&
                 constuct.name === 'Actor'
               )
             )
           ) {
-
-            obj = Object.create(constuct.prototype);
-            obj.__proto__ = new constuct(new Vector(j, i));
-            arrayTarget.push(obj);
+            arrayTarget.push(new constuct(new Vector(j, i)));
           }
 
         }
@@ -345,10 +311,7 @@ class LevelParser {
 class Fireball extends Actor {
 
   constructor(pos = new Vector(0, 0), speed = new Vector(0,0)) {
-    super();
-    this.pos = pos;
-    this.speed = speed;
-    this.size = new Vector(1, 1);
+    super(pos, new Vector(1, 1), speed);
   }
 
   get type() {
@@ -360,15 +323,14 @@ class Fireball extends Actor {
   }
 
   handleObstacle() {
-    this.speed.x = -this.speed.x;
-    this.speed.y = -this.speed.y;
+    this.speed = this.speed.times(-1);
   }
 
   act(time = 1, level) {
 
     let newPos = this.getNextPosition(time);
-//!level.obstacleAt(newPos, this.size) добавлено, чтобы прошел тест, там почему-то на false проверка, а не как по заданию
-    if (level.obstacleAt(newPos, this.size) === undefined || !level.obstacleAt(newPos, this.size)) {
+
+    if (!level.obstacleAt(newPos, this.size)) {
       this.pos = newPos;
     } else {
       level.obstacleAt(newPos, this.size);
@@ -376,31 +338,24 @@ class Fireball extends Actor {
     }
   }
 
-
 }
 
 class HorizontalFireball extends Fireball{
   constructor(pos = new Vector(0, 0)) {
-    super();
-    this.pos = pos;
-    this.speed = new Vector(2, 0);
+    super(pos, new Vector(2, 0));
   }
 }
 
 class VerticalFireball extends Fireball{
   constructor(pos = new Vector(0, 0)) {
-    super();
-    this.pos = pos;
-    this.speed = new Vector(0, 2);
+    super(pos, new Vector(0, 2));
   }
 }
 
 class FireRain extends Fireball{
   constructor(pos = new Vector(0, 0)) {
-    super();
-    this.pos = pos;
-     this.beginPos = pos;
-    this.speed = new Vector(0, 3);
+    super(pos, new Vector(0, 3));
+    this.beginPos = pos;
   }
 
   handleObstacle() {
@@ -410,10 +365,8 @@ class FireRain extends Fireball{
 
 class Coin extends Actor {
   constructor(pos = new Vector(0, 0)) {
-    super();
-    this.pos = pos.plus(new Vector(0.2, 0.1));
+    super(pos.plus(new Vector(0.2, 0.1)), new Vector(0.6, 0.6));
     this.beginPos = this.pos;
-    this.size = new Vector(0.6, 0.6);
     this.springSpeed = 8;
     this.springDist = 0.07;
     this.spring = Math.random() * 2 * Math.PI;
@@ -443,10 +396,7 @@ class Coin extends Actor {
 
 class Player extends Actor {
   constructor(pos = new Vector(0, 0)) {
-    super();
-    this.pos = pos.plus(new Vector(0, -0.5));
-    this.size = new Vector(0.8, 1.5);
-    this.speed = new Vector(0, 0);
+    super(pos.plus(new Vector(0, -0.5)), new Vector(0.8, 1.5), new Vector(0, 0));
   }
 
   get type() {
@@ -466,14 +416,8 @@ loadLevels()
   .then((value) => {
     const schemas = JSON.parse(value);
     const parser = new LevelParser(actorDict);
-    runGame(schemas, parser, DOMDisplay)
-    .then(() => alert('Вы выиграли приз!'));
-});
-
-
-
-
-
-
+    return runGame(schemas, parser, DOMDisplay)
+  })
+  .then(() => alert('Вы выиграли приз!'));
 
 
