@@ -221,10 +221,9 @@ class LevelParser {
     }
 
     let arrayTarget = [];
-    let arr = [];
 
     for (let el of array) {
-      arr.length = 0;
+      let arr = [];
 
       if (el === undefined || el === null || el.length === 0) {
         arrayTarget.push([]);
