@@ -61,11 +61,13 @@ class Actor {
       throw new TypeError('Проверку можно осуществлять только с объектом типа Actor.');
     }
 
-    if (actor === this ||
-      actor.left >= this.right ||
-      actor.right <= this.left ||
-    actor.top >= this.bottom ||
-      actor.bottom <= this.top
+    if (actor === this) {
+      return false;
+    } else if (
+        actor.left >= this.right ||
+        actor.right <= this.left ||
+        actor.top >= this.bottom ||
+        actor.bottom <= this.top
       ) {
       return false;
     }
@@ -77,16 +79,15 @@ class Actor {
 
 class Level {
 
-  constructor(grid, actors) {
+  constructor(grid = [], actors = []) {
     this.grid = grid;
     this.actors = actors;
-    this.player = (actors === undefined) ? actors :
-      this.actors.find(function(el) {
-        return ('type' in el) ? el.type === 'player' : false;
+    this.player = this.actors.find((el) => {
+        return el.type === 'player';
       });
     this.status = null;
 
-    if (this.grid === undefined || this.grid.length === 0) {
+    if (this.grid.length === 0) {
       this.height = 0;
       this.width = 0;
     } else {
@@ -104,15 +105,12 @@ class Level {
   }
 
   actorAt(actor) {
+
     if (!(actor instanceof Actor)) {
       throw new TypeError('Аргументом должен быть движущийся объект типа Actor.');
     }
 
-    if (this.actors === undefined || this.actors.length === 0) {
-      return undefined;
-    }
-
-    return this.actors.find(function(el) {
+    return this.actors.find((el) => {
       return el !== undefined && actor.isIntersect(el);
     });
 
@@ -123,10 +121,6 @@ class Level {
       throw new TypeError('Аргументы должны быть типа Vector.');
     }
 
-    if (movePlace === undefined || size === undefined) {
-      return undefined;
-    }
-
     if (movePlace.x < 0 || (movePlace.x + size.x) > this.width || movePlace.y < 0) {
       return 'wall';
     }
@@ -135,29 +129,23 @@ class Level {
       return 'lava';
     }
 
-    if (this.grid !== undefined) {
-      let countYMin = Math.floor(movePlace.y);
-      let countYMax = (Math.floor(movePlace.y + size.y) === Math.ceil(movePlace.y + size.y)) ? Math.floor(movePlace.y + size.y) - 1: Math.floor(movePlace.y + size.y);
-      let countXMin = Math.floor(movePlace.x);
-      let countXMax = (Math.floor(movePlace.x + size.x) === Math.ceil(movePlace.x + size.x)) ? Math.floor(movePlace.x + size.x) - 1: Math.floor(movePlace.x + size.x);
-      let countX, countY;
+    if (this.grid.length > 0) {
+      const yMin = Math.floor(movePlace.y);
+      const yMax = Math.ceil(movePlace.y + size.y);
+      const xMin = Math.floor(movePlace.x);
+      const xMax = Math.ceil(movePlace.x + size.x);
 
-      countY = countYMin;
+      for (let y = yMin; y < yMax; y++) {
 
-      do {
-        countX = countXMin;
+        for (let x = xMin; x < xMax; x++) {
 
-        do {
-
-          if (this.grid[countY][countX] !== undefined) {
-            return this.grid[countY][countX];
+          if (this.grid[y][x] !== undefined) {
+            return this.grid[y][x];
           }
 
-          countX++;
-        } while (countX <= countXMax)
+        }
 
-        countY++;
-      } while (countY <= countYMax)
+      }
 
     }
 
@@ -169,7 +157,8 @@ class Level {
       throw new TypeError('Аргумент должен быть типа Actor.');
     }
 
-    let i = this.actors.indexOf(actor);
+    const i = this.actors.indexOf(actor);
+
     if (i !== -1) {
       this.actors.splice(i, 1);
     }
@@ -177,7 +166,7 @@ class Level {
   }
 
   noMoreActors(type) {
-    if (this.actors !== undefined && this.actors.length > 0) {
+    if (this.actors.length > 0) {
       return !this.actors.some(function(el) {
         return el.type === type;
       });
@@ -232,9 +221,10 @@ class LevelParser {
     }
 
     let arrayTarget = [];
+    let arr = [];
 
     for (let el of array) {
-      let arr = [];
+      arr.length = 0;
 
       if (el === undefined || el === null || el.length === 0) {
         arrayTarget.push([]);
@@ -246,6 +236,7 @@ class LevelParser {
 
         arrayTarget.push(arr);
       }
+
     }
 
     return arrayTarget;
@@ -328,7 +319,7 @@ class Fireball extends Actor {
 
   act(time = 1, level) {
 
-    let newPos = this.getNextPosition(time);
+    const newPos = this.getNextPosition(time);
 
     if (!level.obstacleAt(newPos, this.size)) {
       this.pos = newPos;
