@@ -232,7 +232,7 @@ class LevelParser {
       return [];
     }
 
-    let result = [];
+    const result = [];
 
     for (let i = 0; i < array.length; i++) {
 
