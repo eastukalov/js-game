@@ -63,16 +63,15 @@ class Actor {
 
     if (actor === this) {
       return false;
-    } else if (
-        actor.left >= this.right ||
-        actor.right <= this.left ||
-        actor.top >= this.bottom ||
-        actor.bottom <= this.top
-      ) {
-      return false;
     }
 
-    return true;
+    return !(
+      actor.left >= this.right ||
+      actor.right <= this.left ||
+      actor.top >= this.bottom ||
+      actor.bottom <= this.top
+    );
+
   }
 
 }
@@ -80,22 +79,17 @@ class Actor {
 class Level {
 
   constructor(grid = [], actors = []) {
-    this.grid = grid;
-    this.actors = actors;
+    this.grid = grid.slice(0);
+    this.actors = actors.slice(0);
     this.player = this.actors.find((el) => {
         return el.type === 'player';
       });
     this.status = null;
+    this.height = this.grid.length;
+    this.width = this.grid.reduce((ret, el) => {
+      return (el.length > ret) ? el.length : ret;
+    }, 0);
 
-    if (this.grid.length === 0) {
-      this.height = 0;
-      this.width = 0;
-    } else {
-      this.height = this.grid.length;
-      this.width = this.grid.reduce((ret, el) => {
-        return (el.length > ret) ? el.length : ret;
-      }, 0);
-    }
 
     this.finishDelay = 1;
   }
@@ -111,7 +105,7 @@ class Level {
     }
 
     return this.actors.find((el) => {
-      return el !== undefined && actor.isIntersect(el);
+      return actor.isIntersect(el);
     });
 
   }
@@ -138,9 +132,10 @@ class Level {
       for (let y = yMin; y < yMax; y++) {
 
         for (let x = xMin; x < xMax; x++) {
+          const cell = this.grid[y][x];
 
-          if (this.grid[y][x] !== undefined) {
-            return this.grid[y][x];
+          if (cell) {
+            return cell;
           }
 
         }
@@ -149,7 +144,6 @@ class Level {
 
     }
 
-    return undefined;
   }
 
   removeActor(actor) {
@@ -166,13 +160,11 @@ class Level {
   }
 
   noMoreActors(type) {
-    if (this.actors.length > 0) {
-      return !this.actors.some(function(el) {
-        return el.type === type;
-      });
-    }
 
-    return true;
+    return !this.actors.some(function(el) {
+      return el.type === type;
+    });
+
   }
 
   playerTouched(type, actor) {
@@ -187,7 +179,7 @@ class Level {
 
     if (type === 'lava' || type === 'fireball') {
       this.status = 'lost';
-    } else if (type === 'coin' && actor !== undefined && 'type' in actor && (actor.type === 'coin' || actor.type === 'actor')) {
+    } else if (actor !== undefined && type === 'coin' && actor.type === 'coin') {
       this.removeActor(actor);
 
       if (this.noMoreActors('coin')) {
@@ -201,17 +193,12 @@ class Level {
 
 class LevelParser {
 
-  constructor(dict) {
-    this.dict = dict;
+  constructor(dict = {}) {
+    this.dict = Object.assign({}, dict);
   }
 
   actorFromSymbol(symbol) {
-
-    if (this.dict !== undefined && symbol in this.dict) {
-      return this.dict[symbol];
-    }
-
-    return undefined;
+    return this.dict[symbol];
   }
 
   createGrid(array) {
@@ -220,32 +207,25 @@ class LevelParser {
       return [];
     }
 
-    let arrayTarget = [];
-
-    for (let el of array) {
+    return array.map((el) => {
       let arr = [];
 
       if (el === undefined || el === null || el.length === 0) {
-        arrayTarget.push([]);
+        return [];
       } else {
 
         for (let i of el) {
           arr.push(this.obstacleFromSymbol(i));
         }
 
-        arrayTarget.push(arr);
+        return arr;
       }
 
-    }
+    });
 
-    return arrayTarget;
   }
 
   obstacleFromSymbol(symbol) {
-
-    if (typeof symbol !== 'string') {
-      return undefined;
-    }
 
     if (symbol === 'x') {
       return 'wall';
@@ -276,7 +256,7 @@ class LevelParser {
             (
               Actor.isPrototypeOf(constuct) ||
               (
-                constuct instanceof Actor.constructor &&
+                typeof constuct === 'function'  &&
                 constuct.name === 'Actor'
               )
             )
@@ -309,7 +289,7 @@ class Fireball extends Actor {
   }
 
   getNextPosition(time = 1) {
-    return new Vector(this.pos.x + this.speed.x * time, this.pos.y + this.speed.y * time);
+    return (new Vector(this.speed.x, this.speed.y)).times(time).plus(new Vector(this.pos.x, this.pos.y));
   }
 
   handleObstacle() {
