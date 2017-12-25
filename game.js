@@ -167,7 +167,7 @@ class Level {
   playerTouched(type, actor) {
 
     if (actor !== undefined && !(actor instanceof Actor)) {
-      throw new TypeError('Аргумент должен быть типа Actor.');
+      throw new TypeError('Аргумент должен быть типа Actor или undefined.');
     }
 
     if (this.status !== null) {
@@ -205,18 +205,14 @@ class LevelParser {
     }
 
     return array.map((el) => {
-      let arr = [];
 
       if (el === undefined || el === null || el.length === 0) {
         return [];
-      } else {
-
-        for (let i of el) {
-          arr.push(this.obstacleFromSymbol(i));
-        }
-
-        return arr;
       }
+
+      return el.split('').map((i) => {
+        return this.obstacleFromSymbol(i);
+      });
 
     });
 
@@ -226,11 +222,12 @@ class LevelParser {
 
     if (symbol === 'x') {
       return 'wall';
-    } else if (symbol === '!') {
+    }
+
+    if (symbol === '!') {
       return 'lava';
     }
 
-    return undefined;
   }
 
   createActors(array) {
@@ -240,25 +237,25 @@ class LevelParser {
     }
 
     let arrayTarget = [];
-    let constuct;
+    let construct;
+    let obj = {};
 
     for (let i = 0; i < array.length; i++) {
 
       if (!(array[i] === undefined || array[i] === null || array[i].length === 0)) {
 
         for (let j = 0; j < array[i].length; j++) {
-          constuct = this.actorFromSymbol(array[i][j]);
+          construct = this.actorFromSymbol(array[i][j]);
 
-          if (constuct !== undefined &&
-            (
-              Actor.isPrototypeOf(constuct) ||
-              (
-                typeof constuct === 'function'  &&
-                constuct.name === 'Actor'
-              )
-            )
+          if (construct !== undefined &&
+            typeof construct === 'function'
           ) {
-            arrayTarget.push(new constuct(new Vector(j, i)));
+            obj = new construct(new Vector(j, i));
+
+            if (obj instanceof Actor) {
+              arrayTarget.push(obj);
+            }
+
           }
 
         }
@@ -286,7 +283,7 @@ class Fireball extends Actor {
   }
 
   getNextPosition(time = 1) {
-    return (new Vector(this.speed.x, this.speed.y)).times(time).plus(new Vector(this.pos.x, this.pos.y));
+    return this.speed.times(time).plus(this.pos);
   }
 
   handleObstacle() {
