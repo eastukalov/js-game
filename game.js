@@ -206,10 +206,6 @@ class LevelParser {
 
     return array.map((el) => {
 
-      if (el === undefined || el === null || el.length === 0) {
-        return [];
-      }
-
       return el.split('').map((i) => {
         return this.obstacleFromSymbol(i);
       });
@@ -236,24 +232,20 @@ class LevelParser {
       return [];
     }
 
-    let arrayTarget = [];
-    let construct;
-    let obj = {};
+    let result = [];
 
     for (let i = 0; i < array.length; i++) {
 
       if (!(array[i] === undefined || array[i] === null || array[i].length === 0)) {
 
         for (let j = 0; j < array[i].length; j++) {
-          construct = this.actorFromSymbol(array[i][j]);
+          const construct = this.actorFromSymbol(array[i][j]);
 
-          if (construct !== undefined &&
-            typeof construct === 'function'
-          ) {
-            obj = new construct(new Vector(j, i));
+          if (typeof construct === 'function') {
+            const obj = new construct(new Vector(j, i));
 
             if (obj instanceof Actor) {
-              arrayTarget.push(obj);
+              result.push(obj);
             }
 
           }
@@ -264,7 +256,7 @@ class LevelParser {
 
     }
 
-    return arrayTarget;
+    return result;
   }
 
   parse(array) {
