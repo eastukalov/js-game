@@ -123,21 +123,18 @@ class Level {
       return 'lava';
     }
 
-    if (this.grid.length > 0) {
-      const yMin = Math.floor(movePlace.y);
-      const yMax = Math.ceil(movePlace.y + size.y);
-      const xMin = Math.floor(movePlace.x);
-      const xMax = Math.ceil(movePlace.x + size.x);
+    const yMin = Math.floor(movePlace.y);
+    const yMax = Math.ceil(movePlace.y + size.y);
+    const xMin = Math.floor(movePlace.x);
+    const xMax = Math.ceil(movePlace.x + size.x);
 
-      for (let y = yMin; y < yMax; y++) {
+    for (let y = yMin; y < yMax; y++) {
 
-        for (let x = xMin; x < xMax; x++) {
-          const cell = this.grid[y][x];
+      for (let x = xMin; x < xMax; x++) {
+        const cell = this.grid[y][x];
 
-          if (cell) {
-            return cell;
-          }
-
+        if (cell) {
+          return cell;
         }
 
       }
@@ -161,7 +158,7 @@ class Level {
 
   noMoreActors(type) {
 
-    return !this.actors.some(function(el) {
+    return !this.actors.some((el) => {
       return el.type === type;
     });
 
